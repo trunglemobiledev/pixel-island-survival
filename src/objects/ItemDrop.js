@@ -48,6 +48,19 @@ export class ItemDrop extends Entity {
             g.fill(0xFF0000); // Red liquid
             g.rect(cx - 2, cy - 6, 4, 6);
             g.fill(0xFFFFFF); // Glass neck
+        } else if (this.itemType === ITEM_TYPE.WEAPON_SWORD) {
+            // Sword
+            g.moveTo(cx - 6, cy + 6);
+            g.lineTo(cx + 6, cy - 6);
+            g.stroke({ width: 3, color: 0xCCCCCC }); // Blade
+
+            g.moveTo(cx - 4, cy + 4);
+            g.lineTo(cx - 8, cy + 8);
+            g.stroke({ width: 3, color: 0x8B4513 }); // Handle
+
+            g.moveTo(cx - 2, cy + 2);
+            g.lineTo(cx - 6, cy + 6);
+            g.stroke({ width: 1, color: 0xFFD700 }); // Hilt
         }
     }
 

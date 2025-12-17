@@ -9,26 +9,15 @@ export class MapSystem extends Container {
     }
 
     initMap() {
-        // Generate map with zones
+        // Generate map (Mostly Grass)
         for (let y = 0; y < MAP_HEIGHT; y++) {
             const row = [];
             for (let x = 0; x < MAP_WIDTH; x++) {
                 let type = TILE_TYPE.GRASS;
 
-                // Zone 0: Home (Top) - Grass
-                if (y < 20) {
-                    type = TILE_TYPE.GRASS;
-                }
-                // Zone 1: Garden (Middle) - Soil
-                else if (y >= 20 && y < 40) {
-                    type = TILE_TYPE.SOIL;
-                }
-                // Zone 2: Water/Forest (Bottom)
-                else {
-                    const rand = Math.random();
-                    if (rand < 0.1) type = TILE_TYPE.WATER;
-                    else if (rand < 0.2) type = TILE_TYPE.STONE;
-                    else type = TILE_TYPE.GRASS;
+                // Random Water patches
+                if (Math.random() < 0.05) {
+                    type = TILE_TYPE.WATER;
                 }
 
                 row.push(type);

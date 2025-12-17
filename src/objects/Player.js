@@ -4,13 +4,15 @@ import { TILE_SIZE, ENTITY_TYPE } from '../utils/Constants';
 export class Player extends Entity {
     constructor(x, y) {
         super(ENTITY_TYPE.PLAYER, x, y);
-        this.speed = 3; // pixels per frame
+        this.speed = 4; // pixels per frame
         this.targetX = this.x;
         this.targetY = this.y;
         this.isMoving = false;
-        this.isJoystickMoving = false;
-        this.joystickVx = 0;
-        this.joystickVy = 0;
+        this.isInputMoving = false;
+        this.inputVx = 0;
+        this.inputVy = 0;
+        this.isAttacking = false;
+        this.attackTimer = 0;
     }
 
     draw() {
@@ -66,40 +68,81 @@ export class Player extends Entity {
         g.rect(centerX - 2, bottomY - 20, 2, 2);
         g.rect(centerX + 2, bottomY - 20, 2, 2);
         g.fill(0x000000);
+
+        // Attack Effect (Sword Swing)
+        if (this.isAttacking) {
+            const swingProgress = this.attackTimer / 20; // 0 to 1
+            const angle = (swingProgress - 0.5) * Math.PI; // -PI/2 to PI/2
+
+            const swordLen = 20;
+            const handX = centerX + (this.visual.scale.x > 0 ? 5 : -5);
+            const handY = bottomY - 12;
+
+            const tipX = handX + Math.cos(angle) * swordLen * this.visual.scale.x;
+            const tipY = handY + Math.sin(angle) * swordLen;
+
+            g.moveTo(handX, handY);
+            g.lineTo(tipX, tipY);
+            g.stroke({ width: 3, color: 0xFFFFFF }); // White trail
+
+            // Sword Blade
+            g.moveTo(handX, handY);
+            g.lineTo(tipX, tipY);
+            g.stroke({ width: 2, color: 0xCCCCCC });
+        }
+    }
+
+    attack(targetX, targetY) {
+        // Face the target
+        const dx = targetX - this.x;
+        this.setFacing(dx);
+
+        // Trigger attack animation
+        this.isAttacking = true;
+        this.attackTimer = 0;
     }
 
     moveTo(gridX, gridY) {
         this.targetX = gridX * TILE_SIZE;
         this.targetY = gridY * TILE_SIZE;
         this.isMoving = true;
-        this.isJoystickMoving = false; // Disable joystick if click-moving
+        this.isInputMoving = false; // Disable input if click-moving
 
         // Determine direction
         const dx = this.targetX - this.x;
         this.setFacing(dx);
     }
 
-    setJoystickInput(vx, vy) {
-        this.joystickVx = vx;
-        this.joystickVy = vy;
-        this.isJoystickMoving = (vx !== 0 || vy !== 0);
-        if (this.isJoystickMoving) {
+    setInput(vx, vy) {
+        this.inputVx = vx;
+        this.inputVy = vy;
+        this.isInputMoving = (vx !== 0 || vy !== 0);
+        if (this.isInputMoving) {
             this.isMoving = false; // Cancel click-move
         }
     }
 
     update(delta) {
-        // Joystick Movement
-        if (this.isJoystickMoving) {
-            this.x += this.joystickVx * this.speed * delta;
-            this.y += this.joystickVy * this.speed * delta;
+        // Attack Animation
+        if (this.isAttacking) {
+            this.attackTimer += delta;
+            if (this.attackTimer > 20) {
+                this.isAttacking = false;
+            }
+            this.draw(); // Redraw to show swing
+        }
+
+        // Input Movement (Joystick or Keyboard)
+        if (this.isInputMoving) {
+            this.x += this.inputVx * this.speed * delta;
+            this.y += this.inputVy * this.speed * delta;
 
             // Walking animation
             this.animTimer += delta * 0.3;
             this.visual.y = Math.abs(Math.sin(this.animTimer)) * -3;
 
-            if (Math.abs(this.joystickVx) > 0.1) {
-                this.setFacing(this.joystickVx);
+            if (Math.abs(this.inputVx) > 0.1) {
+                this.setFacing(this.inputVx);
             }
             return;
         }

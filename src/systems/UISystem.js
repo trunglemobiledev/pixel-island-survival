@@ -20,6 +20,8 @@ export class UISystem extends Container {
         this.createQuestBox();
         this.createToolbar();
         this.createJoystick();
+        this.createHelpButton();
+        this.createHelpModal();
     }
 
     createQuestBox() {
@@ -39,7 +41,7 @@ export class UISystem extends Container {
             fontWeight: 'bold',
             fill: '#FFD700', // Gold
         });
-        const title = new Text({ text: 'Current Quest', style: titleStyle });
+        const title = new Text({ text: 'Nhiệm Vụ', style: titleStyle });
         title.x = 10;
         title.y = 10;
         box.addChild(title);
@@ -52,7 +54,7 @@ export class UISystem extends Container {
             wordWrap: true,
             wordWrapWidth: 230,
         });
-        this.questText = new Text({ text: 'Talk to the Guide NPC.', style: contentStyle });
+        this.questText = new Text({ text: 'Hãy nói chuyện với NPC Hướng dẫn.', style: contentStyle });
         this.questText.x = 10;
         this.questText.y = 35;
         box.addChild(this.questText);
@@ -153,7 +155,7 @@ export class UISystem extends Container {
 
         this.joystickManager.on('move', (evt, data) => {
             if (data.vector) {
-                this.player.setJoystickInput(data.vector.x, -data.vector.y); // NippleJS Y is inverted relative to screen usually? No, up is positive Y in math, but screen is negative Y.
+                this.player.setInput(data.vector.x, -data.vector.y); // NippleJS Y is inverted relative to screen usually? No, up is positive Y in math, but screen is negative Y.
                 // Actually NippleJS vector: up is Y=1, down is Y=-1.
                 // Pixi: up is Y negative, down is Y positive.
                 // So we need to invert Y.
@@ -161,8 +163,116 @@ export class UISystem extends Container {
         });
 
         this.joystickManager.on('end', () => {
-            this.player.setJoystickInput(0, 0);
+            this.player.setInput(0, 0);
         });
+    }
+
+    createHelpButton() {
+        const btn = new Container();
+
+        // Circle BG
+        const bg = new Graphics();
+        bg.circle(0, 0, 20);
+        bg.fill({ color: 0x000000, alpha: 0.6 });
+        bg.stroke({ width: 2, color: 0xFFFFFF });
+        btn.addChild(bg);
+
+        // Text "?"
+        const style = new TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fontWeight: 'bold',
+            fill: '#FFFFFF',
+        });
+        const text = new Text({ text: '?', style });
+        text.anchor.set(0.5);
+        btn.addChild(text);
+
+        // Interaction
+        btn.eventMode = 'static';
+        btn.cursor = 'pointer';
+        btn.on('pointerdown', () => this.toggleHelp());
+
+        // Position: Top Left (below title)
+        btn.x = 30;
+        btn.y = 80; // Below the "Pixel Island" title
+
+        this.addChild(btn);
+        this.helpButton = btn;
+    }
+
+    createHelpModal() {
+        const modal = new Container();
+        modal.visible = false;
+
+        // Overlay
+        const overlay = new Graphics();
+        overlay.rect(0, 0, this.app.screen.width, this.app.screen.height);
+        overlay.fill({ color: 0x000000, alpha: 0.8 });
+        overlay.eventMode = 'static'; // Block clicks below
+        overlay.on('pointerdown', () => this.toggleHelp()); // Click outside to close
+        modal.addChild(overlay);
+        this.helpOverlay = overlay;
+
+        // Box
+        const box = new Container();
+        const boxW = 400;
+        const boxH = 300;
+
+        const bg = new Graphics();
+        bg.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, 20);
+        bg.fill(0x222222);
+        bg.stroke({ width: 4, color: 0xFFFFFF });
+        box.addChild(bg);
+
+        // Content
+        const titleStyle = new TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fontWeight: 'bold',
+            fill: '#FFD700',
+        });
+        const title = new Text({ text: 'HƯỚNG DẪN CHƠI', style: titleStyle });
+        title.anchor.set(0.5, 0);
+        title.y = -boxH / 2 + 20;
+        box.addChild(title);
+
+        const bodyStyle = new TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 16,
+            fill: '#FFFFFF',
+            wordWrap: true,
+            wordWrapWidth: boxW - 40,
+            lineHeight: 24,
+        });
+
+        const guideText =
+            `1. Di chuyển: Dùng Joystick (Góc trái dưới) hoặc phím WASD / Mũi tên.
+2. Tấn công: Click chuột vào mục tiêu.
+3. Zoom: Lăn chuột giữa.
+4. Tương tác: Click vào NPC hoặc Cây cối.
+5. Công cụ: Chọn ở thanh bên dưới.
+6. Mục tiêu: Sinh tồn và xây dựng nông trại!
+
+Click bất kỳ đâu để đóng.`;
+
+        const body = new Text({ text: guideText, style: bodyStyle });
+        body.anchor.set(0.5, 0);
+        body.y = -boxH / 2 + 70;
+        box.addChild(body);
+
+        // Center box
+        box.x = this.app.screen.width / 2;
+        box.y = this.app.screen.height / 2;
+        modal.addChild(box);
+        this.helpBox = box;
+
+        this.addChild(modal);
+        this.helpModal = modal;
+    }
+
+    toggleHelp() {
+        this.helpModal.visible = !this.helpModal.visible;
     }
 
     resize() {
@@ -173,6 +283,12 @@ export class UISystem extends Container {
         if (this.toolbar) {
             this.toolbar.x = (this.app.screen.width - (TOOLBAR_SLOTS * SLOT_SIZE + (TOOLBAR_SLOTS - 1) * 10)) / 2;
             this.toolbar.y = this.app.screen.height - SLOT_SIZE - 20;
+        }
+        if (this.helpModal) {
+            this.helpOverlay.width = this.app.screen.width;
+            this.helpOverlay.height = this.app.screen.height;
+            this.helpBox.x = this.app.screen.width / 2;
+            this.helpBox.y = this.app.screen.height / 2;
         }
     }
 }

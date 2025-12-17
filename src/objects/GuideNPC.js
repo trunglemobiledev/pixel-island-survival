@@ -6,10 +6,10 @@ export class GuideNPC extends NPC {
     constructor(x, y) {
         super(x, y);
         this.dialogue = [
-            "Welcome to Pixel Island!",
-            "Use the joystick to move.",
-            "Select tools from the toolbar.",
-            "Survive the night!"
+            "Chào mừng đến với Đảo Pixel!",
+            "Dùng Joystick để di chuyển.",
+            "Chọn công cụ ở thanh bên dưới.",
+            "Hãy sống sót qua màn đêm!"
         ];
         this.dialogueIndex = 0;
         this.showNameTag();
@@ -30,22 +30,25 @@ export class GuideNPC extends NPC {
     }
 
     interact() {
-        const text = this.dialogue[this.dialogueIndex];
+        // Advance dialogue on click
         this.dialogueIndex = (this.dialogueIndex + 1) % this.dialogue.length;
-        return text;
+        return this.dialogue[this.dialogueIndex];
+    }
+
+    getCurrentDialogue() {
+        return this.dialogue[this.dialogueIndex];
+    }
+
+    update(delta) {
+        // Override NPC update to disable wandering
+        // Just idle animation
+        this.animTimer += delta * 0.05;
+        this.visual.y = Math.sin(this.animTimer) * 1;
     }
 
     draw() {
         super.draw();
-        // Add something distinctive, maybe a different hat color?
-        // Accessing graphics from super might be tricky if I didn't expose it well, 
-        // but NPC.draw() clears graphics.
-        // Let's just override draw completely or trust the base NPC look for now.
-        // Actually, let's make him wear a Red Hat.
-
         const g = this.graphics;
-        // Re-draw base NPC but change hat color
-        // Copy-paste from NPC.js but change hat color
 
         const centerX = TILE_SIZE / 2;
         const bottomY = TILE_SIZE - 2;
