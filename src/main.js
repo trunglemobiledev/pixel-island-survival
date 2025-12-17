@@ -1,0 +1,7 @@
+import './style.css';
+import { Game } from './Game';
+
+(async () => {
+  const game = new Game();
+  await game.init();
+})();
