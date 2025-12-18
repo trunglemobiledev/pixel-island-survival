@@ -30,6 +30,22 @@
   - Toolbar for tool selection (Hand, Hoe, Axe, Sword, Watering Can).
   - Quest Box displaying current objectives.
 
+### Screenshots
+Here are some in-game captures from the project (click to enlarge):
+
+<p align="center">
+  <img src="capture_game/Screenshot%202025-12-18%20082148.png" alt="screenshot1" width="320" style="margin:6px;" />
+  <img src="capture_game/Screenshot%202025-12-18%20082746.png" alt="screenshot2" width="320" style="margin:6px;" />
+  <img src="capture_game/Screenshot%202025-12-18%20082751.png" alt="screenshot3" width="320" style="margin:6px;" />
+</p>
+
+<p align="center">
+  <img src="capture_game/Screenshot%202025-12-18%20082824.png" alt="screenshot4" width="320" style="margin:6px;" />
+  <img src="capture_game/Screenshot%202025-12-18%20082832.png" alt="screenshot5" width="320" style="margin:6px;" />
+  <img src="capture_game/Screenshot%202025-12-18%20082902.png" alt="screenshot6" width="320" style="margin:6px;" />
+</p>
+
+
 ### Tech Stack
 - **Core**: HTML5, Vanilla JavaScript.
 - **Rendering**: [PixiJS](https://pixijs.com/) (v8+).
