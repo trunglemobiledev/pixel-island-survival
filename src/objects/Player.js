@@ -13,6 +13,15 @@ export class Player extends Entity {
         this.inputVy = 0;
         this.isAttacking = false;
         this.attackTimer = 0;
+
+        // Player Stats
+        this.maxHp = 100;
+        this.hp = 100;
+        this.maxMp = 100;
+        this.mp = 100;
+
+        // Inventory
+        this.inventory = [];
     }
 
     draw() {
@@ -20,54 +29,111 @@ export class Player extends Entity {
         g.clear();
 
         // Draw a cute pixel character (Boy)
-        // Scale: TILE_SIZE is 32. Character is approx 16x24 centered.
-
         const centerX = TILE_SIZE / 2;
         const bottomY = TILE_SIZE - 2;
 
-        // Shadow
-        g.ellipse(centerX, bottomY, 8, 3);
-        g.fill({ color: 0x000000, alpha: 0.3 });
+        // Enhanced Shadow with gradient effect
+        g.ellipse(centerX, bottomY, 10, 4);
+        g.fill({ color: 0x000000, alpha: 0.4 });
 
-        // Backpack (Brown) - Drawn behind body (first)
-        g.rect(centerX - 7, bottomY - 18, 14, 10);
+        // Backpack (Detailed) - Drawn behind body
+        g.rect(centerX - 7, bottomY - 18, 14, 11);
+        g.fill(0x8B4513); // Brown
+        // Backpack straps
+        g.rect(centerX - 4, bottomY - 18, 2, 8);
+        g.rect(centerX + 2, bottomY - 18, 2, 8);
+        g.fill(0x654321); // Darker brown
+        // Backpack pocket detail
+        g.rect(centerX - 5, bottomY - 14, 10, 6);
+        g.fill(0x654321);
+        g.rect(centerX - 4, bottomY - 13, 8, 4);
         g.fill(0x8B4513);
 
-        // Legs (Dark Blue Pants)
+        // Legs (Detailed Blue Jeans)
         g.rect(centerX - 4, bottomY - 8, 3, 8); // Left Leg
         g.rect(centerX + 1, bottomY - 8, 3, 8); // Right Leg
-        g.fill(0x222255);
-        // Shoes
-        g.rect(centerX - 4, bottomY - 2, 3, 2);
-        g.rect(centerX + 1, bottomY - 2, 3, 2);
-        g.fill(0x111111);
+        g.fill(0x3355AA); // Brighter blue
+        // Jean pockets
+        g.rect(centerX - 3, bottomY - 6, 2, 2);
+        g.rect(centerX + 2, bottomY - 6, 2, 2);
+        g.fill(0x2244AA);
+        
+        // Shoes (Detailed Sneakers)
+        g.rect(centerX - 5, bottomY - 2, 4, 3); // Left shoe
+        g.rect(centerX + 1, bottomY - 2, 4, 3); // Right shoe
+        g.fill(0x222222);
+        // Shoe soles
+        g.rect(centerX - 5, bottomY, 4, 1);
+        g.rect(centerX + 1, bottomY, 4, 1);
+        g.fill(0x555555);
+        // Shoe laces
+        g.rect(centerX - 3, bottomY - 2, 1, 1);
+        g.rect(centerX + 3, bottomY - 2, 1, 1);
+        g.fill(0xFFFFFF);
 
-        // Body (Red Shirt)
-        g.rect(centerX - 5, bottomY - 16, 10, 9);
-        g.fill(0xFF4444);
-        // Shirt Detail (Stripe)
-        g.rect(centerX - 5, bottomY - 12, 10, 2);
-        g.fill(0xCC0000);
+        // Body (Detailed Red Hoodie)
+        g.rect(centerX - 6, bottomY - 17, 12, 10);
+        g.fill(0xFF5555); // Bright red
+        // Hoodie stripe
+        g.rect(centerX - 6, bottomY - 13, 12, 2);
+        g.fill(0xDD2222);
+        // Hood outline
+        g.rect(centerX - 5, bottomY - 17, 10, 2);
+        g.fill(0xFF7777);
+        // Hoodie pocket
+        g.rect(centerX - 4, bottomY - 11, 8, 3);
+        g.fill(0xCC3333);
+        
+        // Arms
+        g.rect(centerX - 7, bottomY - 14, 2, 6); // Left arm
+        g.rect(centerX + 5, bottomY - 14, 2, 6); // Right arm
+        g.fill(0xFF5555);
+        // Hands
+        g.rect(centerX - 7, bottomY - 8, 2, 2);
+        g.rect(centerX + 5, bottomY - 8, 2, 2);
+        g.fill(0xFFCCAA);
 
-        // Head (Skin)
-        g.rect(centerX - 5, bottomY - 24, 10, 9);
+        // Head (Detailed Skin)
+        g.rect(centerX - 5, bottomY - 25, 10, 10);
+        g.fill(0xFFCCAA);
+        // Neck
+        g.rect(centerX - 2, bottomY - 16, 4, 2);
         g.fill(0xFFCCAA);
         // Blush
-        g.rect(centerX - 4, bottomY - 19, 2, 1);
-        g.rect(centerX + 2, bottomY - 19, 2, 1);
-        g.fill({ color: 0xFFAAAA, alpha: 0.5 });
+        g.rect(centerX - 4, bottomY - 19, 2, 2);
+        g.rect(centerX + 2, bottomY - 19, 2, 2);
+        g.fill({ color: 0xFF9999, alpha: 0.6 });
 
-        // Hair (Brown)
-        g.rect(centerX - 6, bottomY - 26, 12, 4); // Top
-        g.rect(centerX - 6, bottomY - 24, 2, 6);  // Side L
-        g.rect(centerX + 4, bottomY - 24, 2, 6);  // Side R
-        g.rect(centerX - 2, bottomY - 26, 4, 2);  // Cowlick
+        // Hair (Detailed Brown Hair)
+        g.rect(centerX - 6, bottomY - 27, 12, 5); // Top
+        g.fill(0x664422);
+        g.rect(centerX - 6, bottomY - 25, 2, 7);  // Left side
+        g.rect(centerX + 4, bottomY - 25, 2, 7);  // Right side
         g.fill(0x553311);
+        // Bangs
+        g.rect(centerX - 4, bottomY - 23, 2, 3);
+        g.rect(centerX - 1, bottomY - 23, 2, 2);
+        g.rect(centerX + 2, bottomY - 23, 2, 3);
+        g.fill(0x664422);
+        // Cowlick/Ahoge
+        g.rect(centerX - 1, bottomY - 28, 2, 2);
+        g.fill(0x775533);
 
-        // Eyes
-        g.rect(centerX - 2, bottomY - 20, 2, 2);
-        g.rect(centerX + 2, bottomY - 20, 2, 2);
+        // Eyes (Detailed)
+        g.rect(centerX - 3, bottomY - 21, 2, 3); // Left eye white
+        g.rect(centerX + 1, bottomY - 21, 2, 3); // Right eye white
+        g.fill(0xFFFFFF);
+        g.rect(centerX - 2, bottomY - 20, 1, 2); // Left pupil
+        g.rect(centerX + 2, bottomY - 20, 1, 2); // Right pupil
         g.fill(0x000000);
+        // Eye shine
+        g.rect(centerX - 2, bottomY - 21, 1, 1);
+        g.rect(centerX + 2, bottomY - 21, 1, 1);
+        g.fill(0xFFFFFF);
+        
+        // Smile
+        g.rect(centerX - 2, bottomY - 18, 4, 1);
+        g.fill(0x885555);
 
         // Attack Effect (Sword Swing)
         if (this.isAttacking) {
@@ -134,8 +200,14 @@ export class Player extends Entity {
 
         // Input Movement (Joystick or Keyboard)
         if (this.isInputMoving) {
-            this.x += this.inputVx * this.speed * delta;
-            this.y += this.inputVy * this.speed * delta;
+            const newX = this.x + this.inputVx * this.speed * delta;
+            const newY = this.y + this.inputVy * this.speed * delta;
+
+            // Clamp to map bounds
+            const maxX = (60 - 1) * TILE_SIZE; // MAP_WIDTH - 1
+            const maxY = (60 - 1) * TILE_SIZE; // MAP_HEIGHT - 1
+            this.x = Math.max(0, Math.min(newX, maxX));
+            this.y = Math.max(0, Math.min(newY, maxY));
 
             // Walking animation
             this.animTimer += delta * 0.3;
@@ -169,8 +241,14 @@ export class Player extends Entity {
             this.visual.y = 0; // Reset height
         } else {
             const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * this.speed * delta;
-            this.y += Math.sin(angle) * this.speed * delta;
+            const newX = this.x + Math.cos(angle) * this.speed * delta;
+            const newY = this.y + Math.sin(angle) * this.speed * delta;
+
+            // Clamp to map bounds
+            const maxX = (60 - 1) * TILE_SIZE; // MAP_WIDTH - 1
+            const maxY = (60 - 1) * TILE_SIZE; // MAP_HEIGHT - 1
+            this.x = Math.max(0, Math.min(newX, maxX));
+            this.y = Math.max(0, Math.min(newY, maxY));
 
             // Update facing while moving
             if (Math.abs(dx) > 0.1) {

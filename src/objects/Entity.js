@@ -19,6 +19,10 @@ export class Entity extends Container {
         this.graphics = new Graphics();
         this.visual.addChild(this.graphics);
 
+        // Stats
+        this.maxHp = 100;
+        this.hp = this.maxHp;
+
         this.facing = 1; // 1: Right, -1: Left
         this.animTimer = 0;
 
@@ -33,6 +37,38 @@ export class Entity extends Container {
 
     update(delta) {
         // Override in subclasses
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        if (this.hp < 0) this.hp = 0;
+        this.drawHealthBar();
+        return this.hp <= 0;
+    }
+
+    drawHealthBar() {
+        // Remove old bar if exists (simple way, or just redraw on top)
+        // Ideally we have a separate container for UI elements attached to entity
+        if (!this.hpBar) {
+            this.hpBar = new Graphics();
+            this.addChild(this.hpBar);
+        }
+
+        this.hpBar.clear();
+        if (this.hp < this.maxHp) {
+            const width = TILE_SIZE;
+            const height = 4;
+            const y = -8;
+
+            // Background
+            this.hpBar.rect(0, y, width, height);
+            this.hpBar.fill(0x000000);
+
+            // Health
+            const pct = this.hp / this.maxHp;
+            this.hpBar.rect(0, y, width * pct, height);
+            this.hpBar.fill(0x00FF00);
+        }
     }
 
     setFacing(dir) {

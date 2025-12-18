@@ -17,11 +17,67 @@ export class UISystem extends Container {
     }
 
     init() {
+        this.createPlayerStats();
         this.createQuestBox();
         this.createToolbar();
+        this.createInventoryButton();
+        this.createInventoryModal();
         this.createJoystick();
         this.createHelpButton();
         this.createHelpModal();
+    }
+
+    createPlayerStats() {
+        const stats = new Container();
+
+        // HP Bar
+        const hpBg = new Graphics();
+        hpBg.rect(0, 0, 200, 20);
+        hpBg.fill(0x330000);
+        hpBg.stroke({ width: 2, color: 0xFFFFFF });
+        stats.addChild(hpBg);
+
+        this.hpBar = new Graphics();
+        this.hpBar.rect(0, 0, 200, 20);
+        this.hpBar.fill(0xFF0000);
+        stats.addChild(this.hpBar);
+
+        const hpText = new Text({ text: 'HP', style: { fontSize: 12, fill: 'white', fontWeight: 'bold' } });
+        hpText.x = 5;
+        hpText.y = 2;
+        stats.addChild(hpText);
+
+        // MP Bar
+        const mpBg = new Graphics();
+        mpBg.rect(0, 25, 200, 20);
+        mpBg.fill(0x000033);
+        mpBg.stroke({ width: 2, color: 0xFFFFFF });
+        stats.addChild(mpBg);
+
+        this.mpBar = new Graphics();
+        this.mpBar.rect(0, 25, 200, 20);
+        this.mpBar.fill(0x0000FF);
+        stats.addChild(this.mpBar);
+
+        const mpText = new Text({ text: 'MP', style: { fontSize: 12, fill: 'white', fontWeight: 'bold' } });
+        mpText.x = 5;
+        mpText.y = 27;
+        stats.addChild(mpText);
+
+        stats.x = 10;
+        stats.y = 10;
+        this.addChild(stats);
+    }
+
+    updateStats() {
+        if (this.hpBar) {
+            const hpPct = Math.max(0, this.player.hp / this.player.maxHp);
+            this.hpBar.scale.x = hpPct;
+        }
+        if (this.mpBar) {
+            const mpPct = Math.max(0, this.player.mp / this.player.maxMp);
+            this.mpBar.scale.x = mpPct;
+        }
     }
 
     createQuestBox() {
@@ -77,8 +133,6 @@ export class UISystem extends Container {
 
         this.slots = [];
 
-        const toolIcons = [TOOLS.HAND, TOOLS.HOE, TOOLS.AXE, TOOLS.SWORD, TOOLS.WATERING_CAN];
-
         for (let i = 0; i < TOOLBAR_SLOTS; i++) {
             const slot = new Container();
             slot.x = i * (SLOT_SIZE + 10);
@@ -98,12 +152,13 @@ export class UISystem extends Container {
             slot.addChild(highlight);
             slot.highlight = highlight;
 
-            // Tool Text (Placeholder for Icon)
-            const text = new Text({ text: toolIcons[i] || '', style: { fontSize: 10, fill: 'white' } });
-            text.anchor.set(0.5);
-            text.x = SLOT_SIZE / 2;
-            text.y = SLOT_SIZE / 2;
-            slot.addChild(text);
+            // Item Icon/Text
+            const itemText = new Text({ text: '', style: { fontSize: 10, fill: 'white', wordWrap: true, wordWrapWidth: SLOT_SIZE } });
+            itemText.anchor.set(0.5);
+            itemText.x = SLOT_SIZE / 2;
+            itemText.y = SLOT_SIZE / 2;
+            slot.addChild(itemText);
+            slot.itemText = itemText;
 
             // Interaction
             slot.eventMode = 'static';
@@ -119,6 +174,21 @@ export class UISystem extends Container {
 
         this.addChild(bar);
         this.toolbar = bar;
+        this.updateInventory();
+    }
+
+    updateInventory() {
+        // Update slots based on player inventory
+        for (let i = 0; i < TOOLBAR_SLOTS; i++) {
+            const slot = this.slots[i];
+            const item = this.player.inventory[i];
+
+            if (item) {
+                slot.itemText.text = `${item.type}\nx${item.count}`;
+            } else {
+                slot.itemText.text = '';
+            }
+        }
     }
 
     selectTool(index) {
@@ -127,7 +197,221 @@ export class UISystem extends Container {
             slot.highlight.visible = i === index;
         });
         console.log('Selected tool:', index);
-        // TODO: Notify player of tool change
+    }
+
+    createInventoryButton() {
+        const btn = new Container();
+
+        // Bag icon background
+        const bg = new Graphics();
+        bg.roundRect(0, 0, 50, 50, 8);
+        bg.fill({ color: 0x654321, alpha: 0.9 }); // Brown
+        bg.stroke({ width: 2, color: 0xFFFFFF });
+        btn.addChild(bg);
+
+        // Bag icon (simple representation)
+        const icon = new Graphics();
+        // Bag body
+        icon.roundRect(10, 15, 30, 25, 4);
+        icon.fill(0x8B4513);
+        // Bag handle
+        icon.moveTo(15, 15);
+        icon.bezierCurveTo(15, 10, 35, 10, 35, 15);
+        icon.stroke({ width: 3, color: 0x8B4513 });
+        // Bag clasp
+        icon.rect(23, 20, 4, 6);
+        icon.fill(0xFFD700);
+        btn.addChild(icon);
+
+        // Text
+        const text = new Text({ 
+            text: 'Túi', 
+            style: { fontSize: 10, fill: 'white', fontWeight: 'bold' } 
+        });
+        text.anchor.set(0.5);
+        text.x = 25;
+        text.y = 45;
+        btn.addChild(text);
+
+        // Interaction
+        btn.eventMode = 'static';
+        btn.cursor = 'pointer';
+        btn.on('pointerdown', () => this.toggleInventory());
+
+        // Position: Bottom right area, above toolbar
+        btn.x = this.app.screen.width - 70;
+        btn.y = this.app.screen.height - SLOT_SIZE - 90;
+
+        this.addChild(btn);
+        this.inventoryButton = btn;
+    }
+
+    createInventoryModal() {
+        const modal = new Container();
+        modal.visible = false;
+
+        // Overlay
+        const overlay = new Graphics();
+        overlay.rect(0, 0, this.app.screen.width, this.app.screen.height);
+        overlay.fill({ color: 0x000000, alpha: 0.7 });
+        overlay.eventMode = 'static';
+        overlay.on('pointerdown', () => this.toggleInventory());
+        modal.addChild(overlay);
+        this.inventoryOverlay = overlay;
+
+        // Box
+        const box = new Container();
+        const boxW = 500;
+        const boxH = 400;
+
+        const bg = new Graphics();
+        bg.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, 20);
+        bg.fill(0x3E2723);
+        bg.stroke({ width: 4, color: 0xFFD700 });
+        box.addChild(bg);
+
+        // Title
+        const titleStyle = new TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 28,
+            fontWeight: 'bold',
+            fill: '#FFD700',
+        });
+        const title = new Text({ text: '🎒 TÚI ĐỒ', style: titleStyle });
+        title.anchor.set(0.5, 0);
+        title.y = -boxH / 2 + 20;
+        box.addChild(title);
+
+        // Inventory grid (10 slots in 2 rows of 5)
+        this.inventorySlots = [];
+        const slotSize = 60;
+        const spacing = 10;
+        const startX = -((slotSize + spacing) * 5 - spacing) / 2;
+        const startY = -boxH / 2 + 80;
+
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 5; col++) {
+                const index = row * 5 + col;
+                const slot = new Container();
+                slot.x = startX + col * (slotSize + spacing);
+                slot.y = startY + row * (slotSize + spacing);
+
+                // Slot background
+                const slotBg = new Graphics();
+                slotBg.roundRect(0, 0, slotSize, slotSize, 8);
+                slotBg.fill({ color: 0x222222, alpha: 0.8 });
+                slotBg.stroke({ width: 2, color: 0x666666 });
+                slot.addChild(slotBg);
+
+                // Item text
+                const itemText = new Text({ 
+                    text: '', 
+                    style: { 
+                        fontSize: 11, 
+                        fill: 'white', 
+                        align: 'center',
+                        wordWrap: true, 
+                        wordWrapWidth: slotSize - 4 
+                    } 
+                });
+                itemText.anchor.set(0.5);
+                itemText.x = slotSize / 2;
+                itemText.y = slotSize / 2;
+                slot.addChild(itemText);
+                slot.itemText = itemText;
+
+                // Count badge
+                const countBadge = new Graphics();
+                countBadge.circle(slotSize - 12, slotSize - 12, 10);
+                countBadge.fill(0xFF5722);
+                slot.addChild(countBadge);
+                countBadge.visible = false;
+                slot.countBadge = countBadge;
+
+                const countText = new Text({ 
+                    text: '', 
+                    style: { fontSize: 10, fill: 'white', fontWeight: 'bold' } 
+                });
+                countText.anchor.set(0.5);
+                countText.x = slotSize - 12;
+                countText.y = slotSize - 12;
+                slot.addChild(countText);
+                slot.countText = countText;
+
+                box.addChild(slot);
+                this.inventorySlots.push(slot);
+            }
+        }
+
+        // Close button
+        const closeBtn = new Graphics();
+        closeBtn.circle(boxW / 2 - 30, -boxH / 2 + 30, 20);
+        closeBtn.fill({ color: 0xFF0000, alpha: 0.8 });
+        closeBtn.stroke({ width: 2, color: 0xFFFFFF });
+        box.addChild(closeBtn);
+
+        const closeText = new Text({ 
+            text: 'X', 
+            style: { fontSize: 20, fill: 'white', fontWeight: 'bold' } 
+        });
+        closeText.anchor.set(0.5);
+        closeText.x = boxW / 2 - 30;
+        closeText.y = -boxH / 2 + 30;
+        box.addChild(closeText);
+
+        const closeBtnContainer = new Container();
+        closeBtnContainer.addChild(closeBtn);
+        closeBtnContainer.addChild(closeText);
+        closeBtnContainer.eventMode = 'static';
+        closeBtnContainer.cursor = 'pointer';
+        closeBtnContainer.on('pointerdown', (e) => {
+            e.stopPropagation();
+            this.toggleInventory();
+        });
+        box.addChild(closeBtnContainer);
+
+        // Center box
+        box.x = this.app.screen.width / 2;
+        box.y = this.app.screen.height / 2;
+        modal.addChild(box);
+        this.inventoryBox = box;
+
+        this.addChild(modal);
+        this.inventoryModal = modal;
+    }
+
+    toggleInventory() {
+        this.inventoryModal.visible = !this.inventoryModal.visible;
+        if (this.inventoryModal.visible) {
+            this.updateInventoryModal();
+        }
+    }
+
+    updateInventoryModal() {
+        // Update all inventory slots in the modal
+        for (let i = 0; i < this.inventorySlots.length; i++) {
+            const slot = this.inventorySlots[i];
+            const item = this.player.inventory[i];
+
+            if (item) {
+                // Get item emoji/icon
+                let icon = '📦';
+                if (item.type === 'wood') icon = '🪵';
+                else if (item.type === 'stone') icon = '🪨';
+                else if (item.type === 'crystal') icon = '💎';
+                else if (item.type === 'meat') icon = '🥩';
+                else if (item.type === 'leather') icon = '🎒';
+                else if (item.type === 'gold') icon = '🪙';
+
+                slot.itemText.text = `${icon}\n${item.type}`;
+                slot.countBadge.visible = true;
+                slot.countText.text = item.count.toString();
+            } else {
+                slot.itemText.text = '';
+                slot.countBadge.visible = false;
+                slot.countText.text = '';
+            }
+        }
     }
 
     createJoystick() {
@@ -284,9 +568,21 @@ Click bất kỳ đâu để đóng.`;
             this.toolbar.x = (this.app.screen.width - (TOOLBAR_SLOTS * SLOT_SIZE + (TOOLBAR_SLOTS - 1) * 10)) / 2;
             this.toolbar.y = this.app.screen.height - SLOT_SIZE - 20;
         }
+        if (this.inventoryButton) {
+            this.inventoryButton.x = this.app.screen.width - 70;
+            this.inventoryButton.y = this.app.screen.height - SLOT_SIZE - 90;
+        }
+        if (this.inventoryModal) {
+            this.inventoryOverlay.clear();
+            this.inventoryOverlay.rect(0, 0, this.app.screen.width, this.app.screen.height);
+            this.inventoryOverlay.fill({ color: 0x000000, alpha: 0.7 });
+            this.inventoryBox.x = this.app.screen.width / 2;
+            this.inventoryBox.y = this.app.screen.height / 2;
+        }
         if (this.helpModal) {
-            this.helpOverlay.width = this.app.screen.width;
-            this.helpOverlay.height = this.app.screen.height;
+            this.helpOverlay.clear();
+            this.helpOverlay.rect(0, 0, this.app.screen.width, this.app.screen.height);
+            this.helpOverlay.fill({ color: 0x000000, alpha: 0.8 });
             this.helpBox.x = this.app.screen.width / 2;
             this.helpBox.y = this.app.screen.height / 2;
         }

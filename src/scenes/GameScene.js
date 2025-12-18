@@ -11,6 +11,7 @@ import { Enemy } from '../objects/Enemy';
 import { Bird } from '../objects/Bird';
 import { Boar } from '../objects/Boar';
 import { ItemDrop } from '../objects/ItemDrop';
+import { BreakEffect } from '../objects/BreakEffect';
 import { TILE_SIZE, MAP_WIDTH, ITEM_TYPE } from '../utils/Constants';
 
 export class GameScene extends Container {
@@ -33,6 +34,7 @@ export class GameScene extends Container {
 
         this.entities = [];
         this.items = []; // Track items separately
+        this.effects = []; // Track visual effects
         this.targetZoom = 1;
 
         this.init();
@@ -171,8 +173,19 @@ export class GameScene extends Container {
     }
 
     spawnItemDrop(x, y, type) {
-        // x, y are grid coords here
-        const item = new ItemDrop(x * TILE_SIZE, y * TILE_SIZE, type);
+        // x, y can be grid coords or pixel coords with decimal
+        let pixelX, pixelY;
+        if (x < 100 && y < 100) {
+            // Likely grid coords
+            pixelX = x * TILE_SIZE;
+            pixelY = y * TILE_SIZE;
+        } else {
+            // Already pixel coords
+            pixelX = x;
+            pixelY = y;
+        }
+        
+        const item = new ItemDrop(pixelX, pixelY, type);
         this.entityContainer.addChild(item);
         this.items.push(item);
     }
@@ -255,36 +268,30 @@ export class GameScene extends Container {
             this.uiSystem.updateQuest(text);
             return;
         }
-        if (entity instanceof Tree) {
-            console.log("Chopped tree!");
-            this.spawnItemDrop(entity.gridX, entity.gridY, ITEM_TYPE.WOOD);
-            entity.visual.x = (Math.random() - 0.5) * 5;
-            setTimeout(() => entity.visual.x = 0, 100);
-            return;
-        }
-        if (entity instanceof Stone) {
-            console.log("Mined stone!");
-            this.spawnItemDrop(entity.gridX, entity.gridY, ITEM_TYPE.STONE);
-            entity.visual.alpha = 0.5;
-            setTimeout(() => entity.visual.alpha = 1, 100);
-            return;
-        }
-        if (entity instanceof Mineral) {
-            console.log("Mined mineral!");
-            this.spawnItemDrop(entity.gridX, entity.gridY, ITEM_TYPE.GOLD);
-            entity.visual.alpha = 0.5;
-            setTimeout(() => entity.visual.alpha = 1, 100);
-            return;
-        }
-        if (entity instanceof Bird || entity instanceof Boar || entity instanceof Enemy) {
-            console.log("Attacked animal!");
-            entity.graphics.tint = 0xFF0000;
-            setTimeout(() => entity.graphics.tint = 0xFFFFFF, 200);
 
-            const angle = Math.atan2(entity.y - this.player.y, entity.x - this.player.x);
-            entity.x += Math.cos(angle) * 20;
-            entity.y += Math.sin(angle) * 20;
-            return;
+        // Damage Logic
+        let damage = 25; // Default damage
+        // TODO: Check equipped weapon for damage
+
+        // Visual feedback
+        if (entity.graphics) {
+            entity.graphics.tint = 0xFF0000;
+            setTimeout(() => entity.graphics.tint = 0xFFFFFF, 100);
+        }
+
+        // Shake effect
+        if (entity.visual) {
+            const originalX = entity.visual.x;
+            entity.visual.x = (Math.random() - 0.5) * 5;
+            setTimeout(() => entity.visual.x = originalX, 100);
+        }
+
+        if (entity.takeDamage) {
+            const isDead = entity.takeDamage(damage);
+
+            if (isDead) {
+                this.destroyEntity(entity);
+            }
         }
     }
 
@@ -293,6 +300,11 @@ export class GameScene extends Container {
         this.entities.forEach(entity => {
             if (entity.update) entity.update(delta);
         });
+
+        // Update UI Stats
+        if (this.uiSystem) {
+            this.uiSystem.updateStats();
+        }
 
         // Check Guide NPC Proximity
         if (this.guideNPC) {
@@ -320,7 +332,20 @@ export class GameScene extends Container {
                 console.log(`Picked up ${item.itemType}`);
                 this.entityContainer.removeChild(item);
                 this.items.splice(i, 1);
-                // TODO: Add to inventory
+
+                // Add to inventory
+                this.addToInventory(item.itemType);
+            }
+        }
+
+        // Update effects
+        for (let i = this.effects.length - 1; i >= 0; i--) {
+            const effect = this.effects[i];
+            const isDone = effect.update(delta);
+            
+            if (isDone) {
+                this.entityContainer.removeChild(effect);
+                this.effects.splice(i, 1);
             }
         }
 
@@ -338,5 +363,98 @@ export class GameScene extends Container {
 
         this.worldContainer.x += (targetX - this.worldContainer.x) * 0.1;
         this.worldContainer.y += (targetY - this.worldContainer.y) * 0.1;
+    }
+
+    destroyEntity(entity) {
+        // Create break effect
+        let effectColor = 0xFFFFFF;
+        if (entity instanceof Tree) {
+            effectColor = 0x228B22; // Green
+        } else if (entity instanceof Stone) {
+            effectColor = 0x808080; // Grey
+        } else if (entity instanceof Mineral) {
+            effectColor = 0x9C27B0; // Purple
+        } else if (entity instanceof Boar) {
+            effectColor = 0x8B4513; // Brown
+        } else if (entity instanceof Bird) {
+            effectColor = 0x87CEEB; // Sky blue
+        }
+
+        const effect = new BreakEffect(entity.x + TILE_SIZE / 2, entity.y + TILE_SIZE / 2, effectColor);
+        this.entityContainer.addChild(effect);
+        this.effects.push(effect);
+
+        // Remove from scene
+        this.objectContainer.removeChild(entity);
+        this.entityContainer.removeChild(entity); // In case it's in entity layer
+
+        // Remove from list
+        const index = this.entities.indexOf(entity);
+        if (index > -1) {
+            this.entities.splice(index, 1);
+        }
+
+        // Spawn drops
+        if (entity instanceof Tree) {
+            console.log("Chopped tree!");
+            // Drop 2-3 wood
+            const count = 2 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < count; i++) {
+                const offsetX = (Math.random() - 0.5) * 0.5;
+                const offsetY = (Math.random() - 0.5) * 0.5;
+                this.spawnItemDrop(entity.gridX + offsetX, entity.gridY + offsetY, ITEM_TYPE.WOOD);
+            }
+        } else if (entity instanceof Stone) {
+            console.log("Mined stone!");
+            // Drop 1-2 stones
+            const count = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < count; i++) {
+                const offsetX = (Math.random() - 0.5) * 0.5;
+                const offsetY = (Math.random() - 0.5) * 0.5;
+                this.spawnItemDrop(entity.gridX + offsetX, entity.gridY + offsetY, ITEM_TYPE.STONE);
+            }
+        } else if (entity instanceof Mineral) {
+            console.log("Mined mineral!");
+            // Drop 1-2 crystals
+            const count = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < count; i++) {
+                const offsetX = (Math.random() - 0.5) * 0.5;
+                const offsetY = (Math.random() - 0.5) * 0.5;
+                this.spawnItemDrop(entity.gridX + offsetX, entity.gridY + offsetY, ITEM_TYPE.CRYSTAL);
+            }
+        } else if (entity instanceof Boar) {
+            console.log("Killed boar!");
+            // Drop meat and leather
+            this.spawnItemDrop(entity.gridX - 0.2, entity.gridY, ITEM_TYPE.MEAT);
+            this.spawnItemDrop(entity.gridX + 0.2, entity.gridY, ITEM_TYPE.LEATHER);
+        } else if (entity instanceof Bird) {
+            console.log("Killed bird!");
+            // Drop meat only
+            this.spawnItemDrop(entity.gridX, entity.gridY, ITEM_TYPE.MEAT);
+        } else if (entity instanceof Enemy) {
+            console.log("Killed enemy!");
+            // Drop gold or items randomly
+            if (Math.random() < 0.5) {
+                this.spawnItemDrop(entity.gridX, entity.gridY, ITEM_TYPE.GOLD);
+            }
+        }
+    }
+
+    addToInventory(itemType) {
+        // Check if item exists
+        const existingItem = this.player.inventory.find(i => i.type === itemType);
+        if (existingItem) {
+            existingItem.count++;
+        } else {
+            // Find first empty slot? Or just push?
+            // For now just push if length < slots
+            if (this.player.inventory.length < 20) { // 20 slots (4x5 grid)
+                this.player.inventory.push({ type: itemType, count: 1 });
+            } else {
+                console.log("Inventory đầy!");
+                return;
+            }
+        }
+        this.uiSystem.updateInventory();
     }
 }

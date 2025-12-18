@@ -19,32 +19,94 @@ export class NPC extends Entity {
         const centerX = TILE_SIZE / 2;
         const bottomY = TILE_SIZE - 2;
 
-        // Shadow
-        g.ellipse(centerX, bottomY, 8, 3);
-        g.fill({ color: 0x000000, alpha: 0.3 });
+        // Enhanced Shadow
+        g.ellipse(centerX, bottomY, 10, 4);
+        g.fill({ color: 0x000000, alpha: 0.35 });
 
-        // Legs (Brown Pants)
+        // Legs (Detailed Brown Pants)
         g.rect(centerX - 4, bottomY - 8, 3, 8);
         g.rect(centerX + 1, bottomY - 8, 3, 8);
+        g.fill(0x6B5D3F); // Brown
+        // Pants pockets
+        g.rect(centerX - 3, bottomY - 6, 2, 2);
         g.fill(0x554433);
 
-        // Body (Green Shirt - Villager)
-        g.rect(centerX - 5, bottomY - 16, 10, 9);
-        g.fill(0x44AA44);
+        // Shoes (Simple)
+        g.rect(centerX - 5, bottomY - 2, 4, 2);
+        g.rect(centerX + 1, bottomY - 2, 4, 2);
+        g.fill(0x3E2723);
 
-        // Head (Skin)
-        g.rect(centerX - 5, bottomY - 24, 10, 9);
+        // Body (Detailed Green Vest over white shirt)
+        // White shirt
+        g.rect(centerX - 5, bottomY - 16, 10, 9);
+        g.fill(0xECEFF1); // Light grey/white
+        // Vest
+        g.rect(centerX - 5, bottomY - 16, 10, 7);
+        g.fill(0x4CAF50); // Green
+        // Vest details
+        g.rect(centerX - 4, bottomY - 15, 3, 5);
+        g.rect(centerX + 1, bottomY - 15, 3, 5);
+        g.fill(0x388E3C); // Darker green
+        // Buttons
+        g.circle(centerX - 2, bottomY - 13, 1);
+        g.circle(centerX - 2, bottomY - 11, 1);
+        g.fill(0x795548); // Brown buttons
+
+        // Arms
+        g.rect(centerX - 7, bottomY - 14, 2, 6);
+        g.rect(centerX + 5, bottomY - 14, 2, 6);
+        g.fill(0x4CAF50);
+        // Hands
+        g.rect(centerX - 7, bottomY - 8, 2, 2);
+        g.rect(centerX + 5, bottomY - 8, 2, 2);
         g.fill(0xFFCCAA);
 
-        // Hat (Straw Hat)
-        g.rect(centerX - 7, bottomY - 26, 14, 2); // Brim
-        g.rect(centerX - 5, bottomY - 29, 10, 3); // Top
-        g.fill(0xDDCC55);
+        // Head (Detailed Skin)
+        g.rect(centerX - 5, bottomY - 24, 10, 9);
+        g.fill(0xFFCCAA);
+        // Neck
+        g.rect(centerX - 2, bottomY - 16, 4, 2);
+        g.fill(0xFFCCAA);
 
+        // Straw Hat (Detailed)
+        // Brim
+        g.ellipse(centerX, bottomY - 26, 8, 4);
+        g.fill(0xF4E4C1); // Light straw
+        g.rect(centerX - 7, bottomY - 27, 14, 2);
+        g.fill(0xE8D4A0); // Straw color
+        // Crown
+        g.roundRect(centerX - 5, bottomY - 31, 10, 5, 2);
+        g.fill(0xE8D4A0);
+        // Hat band
+        g.rect(centerX - 5, bottomY - 27, 10, 2);
+        g.fill(0xA0522D); // Brown band
+        // Hat texture
+        g.moveTo(centerX - 4, bottomY - 30);
+        g.lineTo(centerX + 4, bottomY - 30);
+        g.moveTo(centerX - 4, bottomY - 28);
+        g.lineTo(centerX + 4, bottomY - 28);
+        g.stroke({ width: 1, color: 0xD4C090 });
+
+        // Face Details
         // Eyes
-        g.rect(centerX - 2, bottomY - 20, 2, 2);
-        g.rect(centerX + 2, bottomY - 20, 2, 2);
+        g.rect(centerX - 3, bottomY - 21, 2, 2);
+        g.rect(centerX + 1, bottomY - 21, 2, 2);
+        g.fill(0xFFFFFF);
+        g.rect(centerX - 2, bottomY - 20, 1, 1);
+        g.rect(centerX + 2, bottomY - 20, 1, 1);
         g.fill(0x000000);
+        
+        // Friendly smile
+        g.rect(centerX - 2, bottomY - 18, 4, 1);
+        g.fill(0x885555);
+        g.rect(centerX - 3, bottomY - 19, 1, 1);
+        g.rect(centerX + 2, bottomY - 19, 1, 1);
+        g.fill(0x885555);
+
+        // Eyebrows
+        g.rect(centerX - 4, bottomY - 22, 3, 1);
+        g.rect(centerX + 1, bottomY - 22, 3, 1);
+        g.fill(0x8B7355);
     }
 
     update(delta) {
@@ -105,8 +167,14 @@ export class NPC extends Entity {
             this.visual.y = 0;
         } else {
             const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * this.speed * delta;
-            this.y += Math.sin(angle) * this.speed * delta;
+            const newX = this.x + Math.cos(angle) * this.speed * delta;
+            const newY = this.y + Math.sin(angle) * this.speed * delta;
+
+            // Clamp to map bounds
+            const maxX = (60 - 1) * TILE_SIZE;
+            const maxY = (60 - 1) * TILE_SIZE;
+            this.x = Math.max(0, Math.min(newX, maxX));
+            this.y = Math.max(0, Math.min(newY, maxY));
         }
     }
 }

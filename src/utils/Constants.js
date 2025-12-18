@@ -41,4 +41,7 @@ export const ITEM_TYPE = {
     GOLD: 'gold',
     POTION: 'potion',
     WEAPON_SWORD: 'weapon_sword',
+    MEAT: 'meat',
+    LEATHER: 'leather',
+    CRYSTAL: 'crystal',
 };
